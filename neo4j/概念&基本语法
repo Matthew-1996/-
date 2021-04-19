@@ -38,7 +38,7 @@ CREATE (p1:Profile1)-[r1:LIKES]->(p2:Profile2)
 ## 匹配match
 match匹配相关的节点、关系、和属性  
 
-但它不能单独使用，匹配完了之后，还需要return，来表明需要展示什么（类似select）  
+但它不能单独使用，匹配完了之后，还需要return，来表明需要展示什么  
 
 其他使用规则依然和上面的create类似
 ```cql
@@ -57,6 +57,13 @@ return p
 
 ## return
 return后面的格式是 节点/关系.属性  
-既可以是具体的节点/关系，也可以是未知数（批量）  
+既可以是具体的节点/关系，也可以是未知数（批量） 
+类似于select   
 
-必须跟match或者create一起使用
+- 必须跟match或者create一起使用  
+- return可以返回多个，用,链接就可以
+```cql
+MATCH (dept: Dept)
+RETURN dept.deptno,dept.dname
+```
+
