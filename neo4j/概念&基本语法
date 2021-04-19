@@ -36,3 +36,27 @@ CREATE (p1:Profile1)-[r1:LIKES]->(p2:Profile2)
 ```
 
 ## 匹配match
+match匹配相关的节点、关系、和属性  
+
+但它不能单独使用，匹配完了之后，还需要return，来表明需要展示什么（类似select）  
+
+其他使用规则依然和上面的create类似
+```cql
+match (p:label {id:123,name:"abc"})
+return p
+# 在match中限定实体，是键值对，所以是:限定
+
+match (p:label)
+where p.name = "abc"
+return p
+# 先match某类标签后，限定属性，因为是where限定，所以用等号
+
+# 而且这里值得注意的是，match不仅能查询某个具体的节点。
+# 就像这里的p可以是一个类似未知数的概念，查询所有name是abc的节点
+```
+
+## return
+return后面的格式是 节点/关系.属性  
+既可以是具体的节点/关系，也可以是未知数（批量）  
+
+必须跟match或者create一起使用
