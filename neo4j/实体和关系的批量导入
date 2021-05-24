@@ -1,0 +1,85 @@
+# neo4j实体和关系的批量导入
+官方参考链接：https://neo4j.com/developer/guide-import-csv/#_super_fast_batch_importer_for_huge_datasets   
+!!!官方桌面端操作指南：https://neo4j.com/developer/desktop-csv-import/
+
+以下是用csv批量导入数据的方法  
+## 主要有3种方式
+1. LOAD CSV Cypher命令（我这次采用的方式）
+   1. 小于1000万条记录
+   2. 官方的指令函数教程（Neo4j Cypher Shell command-line）：https://neo4j.com/docs/cypher-manual/current/
+2. neo4j-admin 批量导入工具
+   1. 命令行（终端）工具，用于大型数据库的导入
+3. Kettle import tool
+   1. 开发者常用
+
+## LOAD CSV Cypher命令批量导入步骤
+1. 读取csv文件
+   1. 必须将csv放在neo4j的文件夹下，才可被导入（数据安全）
+   2. 本地文件导入
+      1. 查看不同系统neo4j的文件位置：https://neo4j.com/docs/operations-manual/current/configuration/file-locations/
+      2. 官方建议将csv放在import文件夹下
+         1. mac的位置：\<neo4j-home\>/import
+      3. 在桌面客户端，可以打开import文件夹，放入：https://neo4j.com/developer/desktop-csv-import/
+   3. url导入（略）
+2. 注意事项
+    1. 所有数据默认字符串导入。所以你需要使用toInteger()，toFloat()，split()或类似功能的转换数值。
+    2. 标签，属性名称，关系类型和变量区分大小写
+    3. 请记住Neo4j不存储空值。可以跳过CSV文件中的空字段或空字段，或将其替换为默认值
+       1. 可以使用条件转换CASE
+       2. ```SET c.emailAddress = CASE trim(row.Email) WHEN "" THEN null ELSE row.Email END```
+3. 语法  
+LOAD CSV WITH HEADERS FROM 'file:///xxxx.csv' AS row  
+MERGE (c:实体集 {实体字段: 实体名});
+
+有员工表：  
+```
+Id,Name,Skills,Email
+1,Joe Smith,Cypher:Java:JavaScript,joe@neo4j.com
+2,Mary Jones,Java,mary@neo4j.com
+3,Trevor Scott,Java:JavaScript,trevor@neo4j.com
+```
+
+```cql
+LOAD CSV WITH HEADERS FROM 'file:///employees.csv' AS row
+MERGE (e:Employee {employeeId: row.Id, email: row.Email})
+WITH e, row
+UNWIND split(row.Skills, ':') AS skill
+MERGE (s:Skill {name: skill})
+MERGE (e)-[r:HAS_EXPERIENCE]->(s)
+```
+
+4. 示例
+
+导入笔记（实体）
+```
+LOAD CSV FROM 'file:///biji.csv' AS row
+WITH row[0] AS discoveryId, row[1] AS title
+MERGE (d:Discover {discoveryId: discoveryId})
+  SET d.title = title
+RETURN count(d);
+```
+查看视图
+```
+MATCH (d:Discover)
+RETURN d LIMIT 20;
+```
+
+导入用户（实体）
+```
+load csv from 'file:///user.csv' as row
+with row[0] as userid, row[1] as username
+merge(u:User{name:username})
+set u.userid=userid
+return count(u)
+```
+
+导入关系
+```
+load csv from 'file:///guanxi.csv' as row
+with row[0] as discoveryId, row[1] as userid, row[2] as imp_num, row[3] as click_num
+match (d:Discover{discoveryId:discoveryId})
+match (u:User{userid:userid})
+merge (d)-[i:imp{imp_num:imp_num}]->(u)
+merge (u)-[c:click{click_num:click_num}]->(d)
+return count(i)
+```
